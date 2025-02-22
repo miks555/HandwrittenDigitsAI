@@ -1,4 +1,4 @@
-#HandwrittenDigitsAI
+# HandwrittenDigitsAI
 [under development]
 This project implements a neural network in C++ for recognizing handwritten digits.
 The network is structured with three layers:
