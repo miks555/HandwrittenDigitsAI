@@ -1,5 +1,5 @@
 # HandwrittenDigitsAI
-[under development]
+(under development)
 This project implements a neural network in C++ for recognizing handwritten digits.
 The network is structured with three layers:
   - Layer 1: 784 bias values and 614656 weight values.
