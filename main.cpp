@@ -6,9 +6,10 @@
 #include <cmath>
 #include <vector>
 
-#define NN_DATA_FILENAME "NN_data"
-#define IMAGE_TO_RECOGNIZE_FILENAME "img"
-
+#define NN_DATA_FILENAME "nn_data"
+#define IMAGE_TO_RECOGNIZE_FILENAME "image_to_recognize"
+#define TRAINING_IMAGES "training_images"
+#define TRAINING_LABELS "training_labels"
 
 class NN {
 public:
@@ -41,7 +42,7 @@ long double * war1weight = new long double[614656];
 long double * war2weight = new long double[614656];
 long double * war3weight = new long double[7840];
 
-void readModelData() {
+void readNNData() {
   std::string liniachwilowa = "0";
   std::ifstream obiekt5654sds767687;
   obiekt5654sds767687.open(NN_DATA_FILENAME);
@@ -122,14 +123,14 @@ long double sigmoid(long double a) {
 }
 
 void randomizeNNData() {
-    std::ofstream modelData;
-    modelData.open(NN_DATA_FILENAME, std::ios::binary);
+    std::ofstream NNData;
+    NNData.open(NN_DATA_FILENAME, std::ios::binary);
     srand(time(NULL));
     for (int i = 0; i < 1238730; i++) {
         double randomValue = (double) rand() / RAND_MAX * 0.0001;
-        modelData.write(reinterpret_cast<const char*>(&randomValue), sizeof(randomValue));
+        NNData.write(reinterpret_cast<const char*>(&randomValue), sizeof(randomValue));
     }
-    modelData.close();
+    NNData.close();
 }
 
 void rozpoznawaj() {
@@ -188,7 +189,7 @@ void rozpoznawaj() {
 
 void trenuj(int * zakres_n) {
   std::ifstream obiekt456g546g54634e5;
-  obiekt456g546g54634e5.open("lab", std::ios::binary);
+  obiekt456g546g54634e5.open(TRAINING_LABELS, std::ios::binary);
   obiekt456g546g54634e5.seekg(0, std::ios::end);
   unsigned long long * ilosc = new unsigned long long[1]; ////ile zdjenc
   * ilosc = obiekt456g546g54634e5.tellg();
@@ -202,7 +203,7 @@ void trenuj(int * zakres_n) {
     lab[i] = static_cast < long double > (pomoc43f5345f34[i]);
   }
   std::ifstream obiekt9990;
-  obiekt9990.open("img", std::ios::binary);
+  obiekt9990.open(TRAINING_IMAGES, std::ios::binary);
   char * pomoc6g5464h7 = new char[ * ilosc * 784];
   obiekt9990.read(pomoc6g5464h7, * ilosc * 784);
   obiekt9990.close();
@@ -387,11 +388,11 @@ bool checkFileExistence(const std::string& filename) {
 int main() {
   std::cout << "loading...\n";
   if (checkFileExistence(NN_DATA_FILENAME) != 1) {
-    std::cout << "no model data found, creating new untrained model...\n";
+    std::cout << "no neural network data found, creating new untrained NN...\n";
     randomizeNNData();
   }
-  std::cout << "reading model data...\n";
-  readModelData();
+  std::cout << "reading neural network data...\n";
+  readNNData();
   std::cout << "Welcome to the neural network that recognizes handwritten digits, to recognize the digit enter 0, to train the network enter 1\n";
   bool * selection = new bool[1];// Selecting menu option
   std::cin >> * selection;
@@ -414,12 +415,12 @@ int main() {
     return 0;
   } else {
     std::ifstream obiekt777788878756546754654;
-    obiekt777788878756546754654.open("lab");
+    obiekt777788878756546754654.open(TRAINING_LABELS);
     bool * good555 = new bool[1];
     * good555 = obiekt777788878756546754654.good();
     obiekt777788878756546754654.close();
     std::ifstream obiekt898;
-    obiekt898.open("img");
+    obiekt898.open(TRAINING_IMAGES);
     bool * good777 = new bool[1];
     * good777 = obiekt898.good();
     obiekt898.close();
