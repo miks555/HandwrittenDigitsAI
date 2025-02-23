@@ -13,24 +13,30 @@
 
 class NN {
 public:
-    NN(){
+    NN(std::string dataFileName) {
+      std::cout<<"neural network instance created\n";
+      this->dataFileName = dataFileName;
+      if (checkDataExistence() != 1) {
+        std::cout << "no neural network data found, creating...\n";
+        //randomizeNNData();
+      }
+      std::cout << "parsing neural network data...\n";
+      //readNNData();
+   }
+   	~NN(){
+	  std::cout<<"neural network instance deleted\n";
+    //free space
+	  }
 
-    }
-    void train(int photosAmount)
-    {
-
-    }
-    void recognize()
-    {
-
-    }
 
 private:
-    int layerNum;
-    std::vector<int> layers;
-    std::vector<std::vector<std::vector<double>>> weights;
-    std::vector<std::vector<double>> biases;
-    
+    std::string dataFileName;
+    std::vector<unsigned int> layersAmound;
+    bool checkDataExistence() {
+        std::ifstream fileCheck(dataFileName);
+        return fileCheck.good();
+    }
+
 };
 
 
@@ -182,7 +188,7 @@ void rozpoznawaj() {
   }
   for (int i = 0; i < 10; i++) {
     if (max1dd23423 == war3val[i]) {
-      std::cout << std::fixed << i << " sure for " << war3val[i] * 100 << "%" << std::endl;
+      std::cout << std::fixed << i << " sure for " << war3val[i] * 100 << "%\n";
     }
   }
 }
@@ -277,7 +283,7 @@ void trenuj(int * zakres_n) {
     	* c_exp=0;
       if(bbi%6194==0)
       {
-	  std::cout<<"training "<<(bbi/1238730.0*100)/(*zakres_n)<<"% do not interrupt"<<std::endl;
+	  std::cout<<"training "<<(bbi/1238730.0*100)/(*zakres_n)<<"% do not interrupt\n";
 	  }
 	  //podmiana
       if (bbi <= 783) {
@@ -375,27 +381,18 @@ void trenuj(int * zakres_n) {
   sav3();
 }
 
-bool checkFileExistence(const std::string& filename) {
-    std::ifstream fileCheck(filename);  // Open file
-    if (fileCheck.good()) {
-        fileCheck.close();  // Close the file if it's valid
-        return true;  // File exists and is accessible
-    }
-    return false;  // File doesn't exist or can't be opened
-}
+
 
 
 int main() {
-  std::cout << "loading...\n";
-  if (checkFileExistence(NN_DATA_FILENAME) != 1) {
-    std::cout << "no neural network data found, creating new untrained NN...\n";
-    randomizeNNData();
-  }
-  std::cout << "reading neural network data...\n";
-  readNNData();
+   NN *network_0 = new NN(NN_DATA_FILENAME);
+
+
   std::cout << "Welcome to the neural network that recognizes handwritten digits, to recognize the digit enter 0, to train the network enter 1\n";
-  bool * selection = new bool[1];// Selecting menu option
+  bool * selection = new bool[1];
   std::cin >> * selection;
+  
+  //recognition
   if ( * selection == 0) {
     std::ifstream obiekt546456;
     obiekt546456.open(IMAGE_TO_RECOGNIZE_FILENAME);
@@ -406,14 +403,18 @@ int main() {
           std::cout << "Recognized digit must be a photo file named " 
               << IMAGE_TO_RECOGNIZE_FILENAME 
               << ", 784 pixels (784 bytes with a brightness degree of 0-255) written left-to-right from top to bottom. "
-              << "The said file was not detected." << std::endl;
+              << "The said file was not detected.\n";
       std::cout << std::endl << std::endl;
       return 0;
     }
     rozpoznawaj();
     std::cout << std::endl << std::endl;
     return 0;
-  } else {
+  }
+  
+
+  //train
+  if ( * selection != 0) {
     std::ifstream obiekt777788878756546754654;
     obiekt777788878756546754654.open(TRAINING_LABELS);
     bool * good555 = new bool[1];
@@ -425,24 +426,26 @@ int main() {
     * good777 = obiekt898.good();
     obiekt898.close();
     if ( * good555 != 1) {
-      std::cout << "photo-digit markings should be written in a file named lab in the order of the photos, one byte is one digit, the said file was not discovered" << std::endl;
-      std::cout << std::endl << std::endl;
+      std::cout << "photo-digit markings should be written in a file named lab in the order of the photos, one byte is one digit, the said file was not discovered\n";
       return 0;
     }
     if ( * good777 != 1) {
-      std::cout << "training photos should be numbers on photos in a single file named img, photo 784 pixels (784 bytes with a brightness level of 0-255) written left to right from top to bottom, photos of 784 bytes can be in this file as much as you want (as much as it enters the ram), this file was not detected" << std::endl;
-      std::cout << std::endl << std::endl;
+      std::cout << "training photos should be numbers on photos in a single file named img, photo 784 pixels (784 bytes with a brightness level of 0-255) written left to right from top to bottom, photos of 784 bytes can be in this file as much as you want (as much as it enters the ram), this file was not detected\n";
       return 0;
     }
-    //////////////zakres uczenia
-    std::cout << "state how many photos to study" << std::endl;
+    //////////////training amount
+    std::cout << "state how many photos to study\n";
     int * zakres_n = new int[1];
     std::cin >> * zakres_n;
     trenuj(zakres_n);
-    std::cout << "trained";
-    std::cout << std::endl << std::endl;
-    return 0;
+    std::cout << "trained\n";
+    
+
   }
+    delete network_0;
+    return 0;
+
+
 }
 
 /*
