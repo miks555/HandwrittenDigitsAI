@@ -4,6 +4,33 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
+#include <vector>
+
+#define NN_DATA_FILENAME "NN_data"
+#define IMAGE_TO_RECOGNIZE_FILENAME "img"
+
+
+class NN {
+public:
+    NN(){
+
+    }
+    void train(int photosAmount)
+    {
+
+    }
+    void recognize()
+    {
+
+    }
+
+private:
+    int layerNum;
+    std::vector<int> layers;
+    std::vector<std::vector<std::vector<double>>> weights;
+    std::vector<std::vector<double>> biases;
+    
+};
 
 
 long double * war1bias = new long double[784];
@@ -17,7 +44,7 @@ long double * war3weight = new long double[7840];
 void readModelData() {
   std::string liniachwilowa = "0";
   std::ifstream obiekt5654sds767687;
-  obiekt5654sds767687.open("model_data");
+  obiekt5654sds767687.open(NN_DATA_FILENAME);
   for (int i = 0, j = 0; i < 1238730;) {
     if (i >= 0 and i <= 783) {
       getline(obiekt5654sds767687, liniachwilowa);
@@ -66,7 +93,7 @@ void readModelData() {
 
 void sav3() {
   std::ofstream obiekt6d7hd567;
-  obiekt6d7hd567.open("model_data", std::ios::trunc);
+  obiekt6d7hd567.open(NN_DATA_FILENAME, std::ios::trunc);
   obiekt6d7hd567 << std::fixed;
   obiekt6d7hd567 << std::setprecision(10);
   for (int i = 0; i < 784; i++) {
@@ -96,7 +123,7 @@ long double sigmoid(long double a) {
 
 void randomizeNNData() {
     std::ofstream modelData;
-    modelData.open("model_data", std::ios::binary);
+    modelData.open(NN_DATA_FILENAME, std::ios::binary);
     srand(time(NULL));
     for (int i = 0; i < 1238730; i++) {
         double randomValue = (double) rand() / RAND_MAX * 0.0001;
@@ -112,7 +139,7 @@ void rozpoznawaj() {
   long double * war3val = new long double[10];
   char * pomoc345345 = new char[784];
   std::ifstream obiekt87986; //////wczytanie zdjencia
-  obiekt87986.open("roz", std::ios::binary);
+  obiekt87986.open(IMAGE_TO_RECOGNIZE_FILENAME, std::ios::binary);
   obiekt87986.read(pomoc345345, 784);
   for (int i = 0; i < 784; i++) {
     if (static_cast < int > (pomoc345345[i]) < 0) {
@@ -359,7 +386,7 @@ bool checkFileExistence(const std::string& filename) {
 
 int main() {
   std::cout << "loading...\n";
-  if (checkFileExistence("model_data") != 1) {
+  if (checkFileExistence(NN_DATA_FILENAME) != 1) {
     std::cout << "no model data found, creating new untrained model...\n";
     randomizeNNData();
   }
@@ -370,12 +397,15 @@ int main() {
   std::cin >> * selection;
   if ( * selection == 0) {
     std::ifstream obiekt546456;
-    obiekt546456.open("roz");
+    obiekt546456.open(IMAGE_TO_RECOGNIZE_FILENAME);
     bool * good345345 = new bool[1];
     * good345345 = obiekt546456.good();
     obiekt546456.close();
     if ( * good345345 != 1) {
-      std::cout << "recognized digit must be a photo-file named roz, 784 pixels (784 bytes with a brightness degree of 0-255) written left-to-right from top to bottom, the said file was not detected" << std::endl;
+          std::cout << "Recognized digit must be a photo file named " 
+              << IMAGE_TO_RECOGNIZE_FILENAME 
+              << ", 784 pixels (784 bytes with a brightness degree of 0-255) written left-to-right from top to bottom. "
+              << "The said file was not detected." << std::endl;
       std::cout << std::endl << std::endl;
       return 0;
     }
@@ -415,7 +445,7 @@ int main() {
 }
 
 /*
-struktura long dubla zapisu (AIDATA)
+struktura
 
 warstwa 0
 -
