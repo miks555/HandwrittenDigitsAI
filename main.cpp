@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
-using namespace std;
 
 
 long double * war1bias = new long double[784];
@@ -16,8 +15,8 @@ long double * war2weight = new long double[614656];
 long double * war3weight = new long double[7840];
 
 void readModelData() {
-  string liniachwilowa = "0";
-  ifstream obiekt5654sds767687;
+  std::string liniachwilowa = "0";
+  std::ifstream obiekt5654sds767687;
   obiekt5654sds767687.open("model_data");
   for (int i = 0, j = 0; i < 1238730;) {
     if (i >= 0 and i <= 783) {
@@ -66,45 +65,44 @@ void readModelData() {
 }
 
 void sav3() {
-  ofstream obiekt6d7hd567;
-  obiekt6d7hd567.open("model_data", ios::trunc);
-  obiekt6d7hd567 << fixed;
-  obiekt6d7hd567 << setprecision(10);
+  std::ofstream obiekt6d7hd567;
+  obiekt6d7hd567.open("model_data", std::ios::trunc);
+  obiekt6d7hd567 << std::fixed;
+  obiekt6d7hd567 << std::setprecision(10);
   for (int i = 0; i < 784; i++) {
-    obiekt6d7hd567 << war1bias[i] << endl;
+    obiekt6d7hd567 << war1bias[i] << std::endl;
   }
   for (int i = 0; i < 614656; i++) {
-    obiekt6d7hd567 << war1weight[i] << endl;
+    obiekt6d7hd567 << war1weight[i] << std::endl;
   }
   for (int i = 0; i < 784; i++) {
-    obiekt6d7hd567 << war2bias[i] << endl;
+    obiekt6d7hd567 << war2bias[i] << std::endl;
   }
   for (int i = 0; i < 614656; i++) {
-    obiekt6d7hd567 << war2weight[i] << endl;
+    obiekt6d7hd567 << war2weight[i] << std::endl;
   }
   for (int i = 0; i < 10; i++) {
-    obiekt6d7hd567 << war3bias[i] << endl;
+    obiekt6d7hd567 << war3bias[i] << std::endl;
   }
   for (int i = 0; i < 7840; i++) {
-    obiekt6d7hd567 << war3weight[i] << endl;
+    obiekt6d7hd567 << war3weight[i] << std::endl;
   }
   obiekt6d7hd567.close();
 }
 
 long double sigmoid(long double a) {
-  return 1.0 / (1.0 + pow(M_E, -a));
+  return 1.0 / (1.0 + pow(M_E, -1.0*a));
 }
 
-void randomizeAiData() {
-  ofstream modelData;
-  modelData.open("model_data");
-  srand(time(NULL));
-  modelData << fixed;
-  modelData << setprecision(10);
-  for (int i = 0; i < 1238730; i++) {
-    modelData << (double) rand() / RAND_MAX * 0.0001 << endl;
-  }
-  modelData.close();
+void randomizeNNData() {
+    std::ofstream modelData;
+    modelData.open("model_data", std::ios::binary);
+    srand(time(NULL));
+    for (int i = 0; i < 1238730; i++) {
+        double randomValue = (double) rand() / RAND_MAX * 0.0001;
+        modelData.write(reinterpret_cast<const char*>(&randomValue), sizeof(randomValue));
+    }
+    modelData.close();
 }
 
 void rozpoznawaj() {
@@ -113,8 +111,8 @@ void rozpoznawaj() {
   long double * war2val = new long double[784];
   long double * war3val = new long double[10];
   char * pomoc345345 = new char[784];
-  ifstream obiekt87986; //////wczytanie zdjencia
-  obiekt87986.open("roz", ios::binary);
+  std::ifstream obiekt87986; //////wczytanie zdjencia
+  obiekt87986.open("roz", std::ios::binary);
   obiekt87986.read(pomoc345345, 784);
   for (int i = 0; i < 784; i++) {
     if (static_cast < int > (pomoc345345[i]) < 0) {
@@ -156,28 +154,28 @@ void rozpoznawaj() {
   }
   for (int i = 0; i < 10; i++) {
     if (max1dd23423 == war3val[i]) {
-      cout << fixed << i << " sure for " << war3val[i] * 100 << "%" << endl;
+      std::cout << std::fixed << i << " sure for " << war3val[i] * 100 << "%" << std::endl;
     }
   }
 }
 
 void trenuj(int * zakres_n) {
-  ifstream obiekt456g546g54634e5;
-  obiekt456g546g54634e5.open("lab", ios::binary);
-  obiekt456g546g54634e5.seekg(0, ios::end);
+  std::ifstream obiekt456g546g54634e5;
+  obiekt456g546g54634e5.open("lab", std::ios::binary);
+  obiekt456g546g54634e5.seekg(0, std::ios::end);
   unsigned long long * ilosc = new unsigned long long[1]; ////ile zdjenc
   * ilosc = obiekt456g546g54634e5.tellg();
   long double * img = new long double[ * ilosc * 784]; //////foto
   long double * lab = new long double[ * ilosc]; //////oznaczenia
-  obiekt456g546g54634e5.seekg(0, ios::beg);
+  obiekt456g546g54634e5.seekg(0, std::ios::beg);
   char * pomoc43f5345f34 = new char[ * ilosc];
   obiekt456g546g54634e5.read(pomoc43f5345f34, * ilosc);
   obiekt456g546g54634e5.close();
   for (int i = 0; i < * ilosc; i++) {
     lab[i] = static_cast < long double > (pomoc43f5345f34[i]);
   }
-  ifstream obiekt9990;
-  obiekt9990.open("img", ios::binary);
+  std::ifstream obiekt9990;
+  obiekt9990.open("img", std::ios::binary);
   char * pomoc6g5464h7 = new char[ * ilosc * 784];
   obiekt9990.read(pomoc6g5464h7, * ilosc * 784);
   obiekt9990.close();
@@ -251,7 +249,7 @@ void trenuj(int * zakres_n) {
     	* c_exp=0;
       if(bbi%6194==0)
       {
-	  cout<<"training "<<(bbi/1238730.0*100)/(*zakres_n)<<"% do not interrupt"<<endl;
+	  std::cout<<"training "<<(bbi/1238730.0*100)/(*zakres_n)<<"% do not interrupt"<<std::endl;
 	  }
 	  //podmiana
       if (bbi <= 783) {
@@ -349,8 +347,8 @@ void trenuj(int * zakres_n) {
   sav3();
 }
 
-bool checkFileExistence(const string& filename) {
-    ifstream fileCheck(filename);  // Open file
+bool checkFileExistence(const std::string& filename) {
+    std::ifstream fileCheck(filename);  // Open file
     if (fileCheck.good()) {
         fileCheck.close();  // Close the file if it's valid
         return true;  // File exists and is accessible
@@ -360,60 +358,58 @@ bool checkFileExistence(const string& filename) {
 
 
 int main() {
-  cout << "loading...\n";
+  std::cout << "loading...\n";
   if (checkFileExistence("model_data") != 1) {
-    cout << "no model data found, creating new untrained model...\n";
-    randomizeAiData();
+    std::cout << "no model data found, creating new untrained model...\n";
+    randomizeNNData();
   }
-  cout << "reading model data...\n";
+  std::cout << "reading model data...\n";
   readModelData();
-
-  
-  cout << "Welcome to the neural network that recognizes handwritten digits, to recognize the digit enter 0, to train the network enter 1\n";
+  std::cout << "Welcome to the neural network that recognizes handwritten digits, to recognize the digit enter 0, to train the network enter 1\n";
   bool * selection = new bool[1];// Selecting menu option
-  cin >> * selection;
+  std::cin >> * selection;
   if ( * selection == 0) {
-    ifstream obiekt546456;
+    std::ifstream obiekt546456;
     obiekt546456.open("roz");
     bool * good345345 = new bool[1];
     * good345345 = obiekt546456.good();
     obiekt546456.close();
     if ( * good345345 != 1) {
-      cout << "recognized digit must be a photo-file named roz, 784 pixels (784 bytes with a brightness degree of 0-255) written left-to-right from top to bottom, the said file was not detected" << endl;
-      cout << endl << endl;
+      std::cout << "recognized digit must be a photo-file named roz, 784 pixels (784 bytes with a brightness degree of 0-255) written left-to-right from top to bottom, the said file was not detected" << std::endl;
+      std::cout << std::endl << std::endl;
       return 0;
     }
     rozpoznawaj();
-    cout << endl << endl;
+    std::cout << std::endl << std::endl;
     return 0;
   } else {
-    ifstream obiekt777788878756546754654;
+    std::ifstream obiekt777788878756546754654;
     obiekt777788878756546754654.open("lab");
     bool * good555 = new bool[1];
     * good555 = obiekt777788878756546754654.good();
     obiekt777788878756546754654.close();
-    ifstream obiekt898;
+    std::ifstream obiekt898;
     obiekt898.open("img");
     bool * good777 = new bool[1];
     * good777 = obiekt898.good();
     obiekt898.close();
     if ( * good555 != 1) {
-      cout << "photo-digit markings should be written in a file named lab in the order of the photos, one byte is one digit, the said file was not discovered" << endl;
-      cout << endl << endl;
+      std::cout << "photo-digit markings should be written in a file named lab in the order of the photos, one byte is one digit, the said file was not discovered" << std::endl;
+      std::cout << std::endl << std::endl;
       return 0;
     }
     if ( * good777 != 1) {
-      cout << "training photos should be numbers on photos in a single file named img, photo 784 pixels (784 bytes with a brightness level of 0-255) written left to right from top to bottom, photos of 784 bytes can be in this file as much as you want (as much as it enters the ram), this file was not detected" << endl;
-      cout << endl << endl;
+      std::cout << "training photos should be numbers on photos in a single file named img, photo 784 pixels (784 bytes with a brightness level of 0-255) written left to right from top to bottom, photos of 784 bytes can be in this file as much as you want (as much as it enters the ram), this file was not detected" << std::endl;
+      std::cout << std::endl << std::endl;
       return 0;
     }
     //////////////zakres uczenia
-    cout << "state how many photos to study" << endl;
+    std::cout << "state how many photos to study" << std::endl;
     int * zakres_n = new int[1];
-    cin >> * zakres_n;
+    std::cin >> * zakres_n;
     trenuj(zakres_n);
-    cout << "trained";
-    cout << endl << endl;
+    std::cout << "trained";
+    std::cout << std::endl << std::endl;
     return 0;
   }
 }
