@@ -6,9 +6,7 @@
 #include <cmath>
 using namespace std;
 
-// #DEFINE W1_SIZE = 784
-// #DEFINE W2_SIZE = 784
-// #DEFINE W1B_SIZE = 784
+
 long double * war1bias = new long double[784];
 long double * war2bias = new long double[784];
 long double * war3bias = new long double[10];
