@@ -4,8 +4,8 @@ under development!
 This project implements a neural network in C++ for recognizing handwritten digits.
 The network is structured with three layers:
   - Layer 1: 784 bias values and 614656 weight values.
-  - Layer 2: 784 bias values and 614656 weight values.
-  - Layer 3 (Output Layer): 10 bias values and 7840 weight values.
+  - Layer 2: 200 bias values and 156800 weight values.
+  - Layer 3 (Output Layer): 10 bias values and 2000 weight values.
 
 Functionality:
   - If no pre-trained model data is found in "model_data", the program creates an untrained model with randomized weights.
