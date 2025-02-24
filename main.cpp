@@ -34,11 +34,11 @@ class NN {
 };
 
 NN::NN() {
-    std::cout << "neural network instance created\n";
+    std::cout << "Neural network instance created\n";
 }
 
 NN::~NN() {
-  std::cout << "neural network instance deleted\n";
+  std::cout << "Neural network instance deleted\n";
   //Free RAM here
 }
 
@@ -61,7 +61,7 @@ bool NN::initiate(std::string fileNameData, std::vector < unsigned int > layerNe
     weightsLayers[i].resize(layerNeuronsAmounds[i-1]*layerNeuronsAmounds[i]);
     biasesLayers[i].resize(layerNeuronsAmounds[i]);
   }
-  if (checkFileExistence(fileNameData) != 1) {
+  if (!checkFileExistence(fileNameData)) {
     std::cerr << "No neural network data found, randomizing...\n";
     if(randomizeData()){
       std::cerr<<"Data randomization error\n";
@@ -73,6 +73,7 @@ bool NN::initiate(std::string fileNameData, std::vector < unsigned int > layerNe
     std::cerr<<"Data parsing error\n";
     return 1;
   }
+  std::cout << "Network initiated\n";
   return 0;
 }
 
@@ -82,23 +83,21 @@ bool NN::checkFileExistence(std::string fileName) {
 }
 
 bool NN::randomizeData() {
-  // std::ofstream dataStream;
-  // dataStream.open(fileNameData, std::ios::binary);
-  // srand(static_cast<unsigned int>(time(NULL)));
-  // unsigned int product = 1;
-  // for (size_t i = 0; i < layersNeuronsAmounds.size(); i++) {
-  //   product = product * layersNeuronsAmounds[i];
-  // }
-  // for (size_t i = 0; i < product; i++) {
-  //   double randomValue = (double) rand() / RAND_MAX * RANDOMIZATION_CONST;
-  //   dataStream.write(reinterpret_cast <
-  //     const char * > ( & randomValue), sizeof(randomValue));
-  // }
-  // dataStream.close();
-  // if(checkFileExistence(fileNameData)){
-  //   return 1;
-  // }
-  // return 0;
+  std::ofstream dataStream(fileNameData, std::ios::binary);
+  srand(static_cast<unsigned int>(time(NULL)));
+  unsigned int sum = 0; //Amound of weights and biases (neural network data size)
+  for (size_t i = 0; i < weightsLayers.size(); i++) {
+    sum = sum + weightsLayers[i].size() + biasesLayers[i].size();
+  }
+  for (size_t i = 0; i < sum; i++) {
+    double randomValue = (double) rand() / RAND_MAX * RANDOMIZATION_CONST;
+    dataStream.write(reinterpret_cast <const char *> ( & randomValue), sizeof(randomValue));
+  }
+  dataStream.close();
+  if(!checkFileExistence(fileNameData)){
+    return 1;
+  }
+  return 0;
 }
 
 bool NN::parseData() {
@@ -149,6 +148,7 @@ bool NN::parseData() {
   //   i++;
   // }
   // obiekt5654sds767687.close();
+  return 0;
 }
 
 bool NN::saveData() {
@@ -242,14 +242,14 @@ bool NN::recognize(std::string fileNameRecognize) {
 }
 
 bool NN::train(std::string fileNameTrainImages, std::string fileNameTrainLabels) {
-  if(checkFileExistence(fileNameTrainLabels))
+  if(!checkFileExistence(fileNameTrainLabels))
   {
-    std::cerr << "Digits labels should be written in a file named" 
+    std::cerr << "Digits labels should be written in a file named " 
     << fileNameTrainLabels
     <<" in the order of the photos, one byte is one digit, the said file was not discovered\n";
     return 1;
   }
-  if (checkFileExistence(fileNameTrainImages)) {
+  if (!checkFileExistence(fileNameTrainImages)) {
     std::cerr << "The training images should be contained in a single file named "
     << fileNameTrainImages
     << ". Each image should be 784 pixels (784 bytes, with brightness levels from 0 to 255), written left to right, top to bottom. You can have as many 784-byte images in this file as the RAM can handle. This file was not found.\n";
@@ -440,16 +440,12 @@ bool NN::train(std::string fileNameTrainImages, std::string fileNameTrainLabels)
   //   } //{1230890 - 1238729}
   // }
   // sav3();
-  std::cout << "trained\n";
+  std::cout << "Training completed\n";
   return 0;
 }
 
 int main() {
     NN* network_0 = new NN();
-    std::cout << "Welcome to the neural network that recognizes handwritten digits, "
-              << "to recognize the digit enter 0, to train the network enter 1\n";
-    bool selection;
-    std::cin >> selection;
     if (network_0->initiate(NN_DATA_FILENAME, {
         LAYER_1_NEURON_AMOUNT,
         LAYER_2_NEURON_AMOUNT,
@@ -458,6 +454,9 @@ int main() {
         delete network_0;
         return 1;
     }
+    std::cout << "To recognize the digit enter 0, to train the network enter 1\n";
+    bool selection;
+    std::cin >> selection;
     if (selection == 0) {
         if (network_0->recognize(IMAGE_TO_RECOGNIZE_FILENAME)) {
             delete network_0; 
