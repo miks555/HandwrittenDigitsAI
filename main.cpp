@@ -24,11 +24,13 @@ class NN {
   bool recognize(std::string fileNameRecognize);
   private: 
   std::string fileNameData;
-  std::vector < unsigned int > layersNeuronsAmound;
+  std::vector<std::vector<double>> weightsLayers;// weightsLayers[layerIndex][weightIndex]
+  std::vector<std::vector<double>> biasesLayers;
   bool randomizeData();
   bool parseData();
   bool saveData();
   bool checkFileExistence(std::string fileName);
+  double sigmoid(double num);
 };
 
 NN::NN() {
@@ -40,41 +42,63 @@ NN::~NN() {
   //Free RAM here
 }
 
+double NN::sigmoid(double num) {
+  return 1.0 / (1.0 + pow(M_E, -1.0*num));
+}
+
 bool NN::initiate(std::string fileNameData, std::vector < unsigned int > layerNeuronsAmounds){
   this -> fileNameData = fileNameData;
-  this -> layersNeuronsAmound = layerNeuronsAmounds;
-  std::cout << "Neural network instance created with layout:\n";
+  std::cout << "Neural network instance initiated with layout:\n";
   for (size_t i = 0; i < layerNeuronsAmounds.size(); i++) {
     std::cout << layerNeuronsAmounds[i] << std::endl;
   }
-  if (checkFileExistence(fileNameData) != 1) {
-    std::cout << "no neural network data found, randomizing...\n";
-    randomizeData();
+  weightsLayers.resize(layerNeuronsAmounds.size());//Number of layers
+  biasesLayers.resize(layerNeuronsAmounds.size());
+  weightsLayers[0].resize(pow(layerNeuronsAmounds[0],2));//Number of pixels same as neurons of 1 layer
+  biasesLayers[0].resize(layerNeuronsAmounds[0]);
+  for (size_t i = 1; i < layerNeuronsAmounds.size();i++)
+  {
+    weightsLayers[i].resize(layerNeuronsAmounds[i-1]*layerNeuronsAmounds[i]);
+    biasesLayers[i].resize(layerNeuronsAmounds[i]);
   }
-  std::cout << "parsing neural network data...\n";
-  parseData();
+  if (checkFileExistence(fileNameData) != 1) {
+    std::cerr << "No neural network data found, randomizing...\n";
+    if(randomizeData()){
+      std::cerr<<"Data randomization error\n";
+      return 1;
+    }
+  }
+  std::cout << "Parsing neural network data...\n";
+  if(parseData()){
+    std::cerr<<"Data parsing error\n";
+    return 1;
+  }
   return 0;
 }
 
 bool NN::checkFileExistence(std::string fileName) {
-  std::ifstream fileCheck(fileName);
-  return fileCheck.good();
+  std::ifstream fileCheckStream(fileName);
+  return fileCheckStream.good();
 }
 
 bool NN::randomizeData() {
-  std::ofstream NNData;
-  NNData.open(fileNameData, std::ios::binary);
-  srand(time(NULL));
-  unsigned int product = 1;
-  for (size_t i = 0; i < layersNeuronsAmound.size(); i++) {
-    product = product * layersNeuronsAmound[i];
-  }
-  for (size_t i = 0; i < product; i++) {
-    double randomValue = (double) rand() / RAND_MAX * RANDOMIZATION_CONST;
-    NNData.write(reinterpret_cast <
-      const char * > ( & randomValue), sizeof(randomValue));
-  }
-  NNData.close();
+  // std::ofstream dataStream;
+  // dataStream.open(fileNameData, std::ios::binary);
+  // srand(static_cast<unsigned int>(time(NULL)));
+  // unsigned int product = 1;
+  // for (size_t i = 0; i < layersNeuronsAmounds.size(); i++) {
+  //   product = product * layersNeuronsAmounds[i];
+  // }
+  // for (size_t i = 0; i < product; i++) {
+  //   double randomValue = (double) rand() / RAND_MAX * RANDOMIZATION_CONST;
+  //   dataStream.write(reinterpret_cast <
+  //     const char * > ( & randomValue), sizeof(randomValue));
+  // }
+  // dataStream.close();
+  // if(checkFileExistence(fileNameData)){
+  //   return 1;
+  // }
+  // return 0;
 }
 
 bool NN::parseData() {
@@ -152,14 +176,12 @@ bool NN::saveData() {
   //   }
   //   obiekt6d7hd567.close();
   // }
-  //  double sigmoid( double a) {
-  //   return 1.0 / (1.0 + pow(M_E, -1.0*a));
 }
 
 bool NN::recognize(std::string fileNameRecognize) {
   std::ifstream fileRecognizeStream(fileNameRecognize);
   if (!fileRecognizeStream) {
-    std::cout << "Provide a photo file named " <<
+    std::cerr << "Provide a photo file named " <<
       fileNameRecognize <<
       ", 28x28px (784 bytes with a brightness degree of 0-255) written left-to-right from top to bottom. " <<
       "The said file was not detected.\n";
@@ -216,25 +238,21 @@ bool NN::recognize(std::string fileNameRecognize) {
   //     std::cout << std::fixed << i << " sure for " << war3val[i] * 100 << "%\n";
   //   }
   // }
+  return 0;
 }
 
 bool NN::train(std::string fileNameTrainImages, std::string fileNameTrainLabels) {
-  std::ifstream obiekt777788878756546754654;
-  obiekt777788878756546754654.open(TRAINING_LABELS_FILENAME);
-  bool * good555 = new bool[1];
-  * good555 = obiekt777788878756546754654.good();
-  obiekt777788878756546754654.close();
-  std::ifstream obiekt898;
-  obiekt898.open(TRAINING_IMAGES_FILENAME);
-  bool * good777 = new bool[1];
-  * good777 = obiekt898.good();
-  obiekt898.close();
-  if ( * good555 != 1) {
-    std::cout << "photo-digit markings should be written in a file named lab in the order of the photos, one byte is one digit, the said file was not discovered\n";
+  if(checkFileExistence(fileNameTrainLabels))
+  {
+    std::cerr << "Digits labels should be written in a file named" 
+    << fileNameTrainLabels
+    <<" in the order of the photos, one byte is one digit, the said file was not discovered\n";
     return 1;
   }
-  if ( * good777 != 1) {
-    std::cout << "training photos should be numbers on photos in a single file named img, photo 784 pixels (784 bytes with a brightness level of 0-255) written left to right from top to bottom, photos of 784 bytes can be in this file as much as you want (as much as it enters the ram), this file was not detected\n";
+  if (checkFileExistence(fileNameTrainImages)) {
+    std::cerr << "The training images should be contained in a single file named "
+    << fileNameTrainImages
+    << ". Each image should be 784 pixels (784 bytes, with brightness levels from 0 to 255), written left to right, top to bottom. You can have as many 784-byte images in this file as the RAM can handle. This file was not found.\n";
     return 1;
   }
   // std::ifstream obiekt456g546g54634e5;
@@ -423,6 +441,7 @@ bool NN::train(std::string fileNameTrainImages, std::string fileNameTrainLabels)
   // }
   // sav3();
   std::cout << "trained\n";
+  return 0;
 }
 
 int main() {
@@ -436,7 +455,7 @@ int main() {
         LAYER_2_NEURON_AMOUNT,
         LAYER_3_NEURON_AMOUNT
     })) {
-        delete network_0; 
+        delete network_0;
         return 1;
     }
     if (selection == 0) {
