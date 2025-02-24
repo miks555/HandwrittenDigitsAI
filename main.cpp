@@ -22,9 +22,10 @@ class NN {
   bool initiate(std::string fileNameData, std::vector < unsigned int > layerNeuronsAmounds);
   bool train(std::string fileNameTrainImages, std::string fileNameTrainLabels);
   bool recognize(std::string fileNameRecognize);
-  private: 
+  private:
   std::string fileNameData;
-  std::vector<std::vector<double>> weightsLayers;// weightsLayers[layerIndex][weightIndex]
+  size_t dataSize;
+  std::vector<std::vector<double>> weightsLayers; //weightsLayers[layerIndex][weightIndex]
   std::vector<std::vector<double>> biasesLayers;
   bool randomizeData();
   bool parseData();
@@ -48,6 +49,7 @@ double NN::sigmoid(double num) {
 
 bool NN::initiate(std::string fileNameData, std::vector < unsigned int > layerNeuronsAmounds){
   this -> fileNameData = fileNameData;
+  this -> dataSize = 0;
   std::cout << "Neural network instance initiated with layout:\n";
   for (size_t i = 0; i < layerNeuronsAmounds.size(); i++) {
     std::cout << layerNeuronsAmounds[i] << std::endl;
@@ -60,6 +62,9 @@ bool NN::initiate(std::string fileNameData, std::vector < unsigned int > layerNe
   {
     weightsLayers[i].resize(layerNeuronsAmounds[i-1]*layerNeuronsAmounds[i]);
     biasesLayers[i].resize(layerNeuronsAmounds[i]);
+  }
+  for (size_t i = 0; i < weightsLayers.size(); i++) {
+    dataSize = dataSize + weightsLayers[i].size() + biasesLayers[i].size();
   }
   if (!checkFileExistence(fileNameData)) {
     std::cerr << "No neural network data found, randomizing...\n";
@@ -85,11 +90,7 @@ bool NN::checkFileExistence(std::string fileName) {
 bool NN::randomizeData() {
   std::ofstream dataStream(fileNameData, std::ios::binary);
   srand(static_cast<unsigned int>(time(NULL)));
-  unsigned int sum = 0; //Amound of weights and biases (neural network data size)
-  for (size_t i = 0; i < weightsLayers.size(); i++) {
-    sum = sum + weightsLayers[i].size() + biasesLayers[i].size();
-  }
-  for (size_t i = 0; i < sum; i++) {
+  for (size_t i = 0; i < dataSize; i++) {
     double randomValue = (double) rand() / RAND_MAX * RANDOMIZATION_CONST;
     dataStream.write(reinterpret_cast <const char *> ( & randomValue), sizeof(randomValue));
   }
@@ -101,55 +102,19 @@ bool NN::randomizeData() {
 }
 
 bool NN::parseData() {
-  // std::string liniachwilowa = "0";
-  // std::ifstream obiekt5654sds767687;
-  // obiekt5654sds767687.open(NN_DATA_FILENAME);
-  // for (size_t i = 0, j = 0; i < 1238730;) {
-  //   if (i >= 0 and i <= 783) {
-  //     getline(obiekt5654sds767687, liniachwilowa);
-  //     war1bias[j] = strtold(liniachwilowa.c_str(), NULL);
-  //   }
-  //   if (i == 783) {
-  //     j = -1;
-  //   }
-  //   if (i >= 784 and i <= 615439) {
-  //     getline(obiekt5654sds767687, liniachwilowa);
-  //     war1weight[j] = strtold(liniachwilowa.c_str(), NULL);
-  //   }
-  //   if (i == 615439) {
-  //     j = -1;
-  //   }
-  //   if (i >= 615440 and i <= 616223) {
-  //     getline(obiekt5654sds767687, liniachwilowa);
-  //     war2bias[j] = strtold(liniachwilowa.c_str(), NULL);
-  //   }
-  //   if (i == 616223) {
-  //     j = -1;
-  //   }
-  //   if (i >= 616224 and i <= 1230879) {
-  //     getline(obiekt5654sds767687, liniachwilowa);
-  //     war2weight[j] = strtold(liniachwilowa.c_str(), NULL);
-  //   }
-  //   if (i == 1230879) {
-  //     j = -1;
-  //   }
-  //   if (i >= 1230880 and i <= 1230889) {
-  //     getline(obiekt5654sds767687, liniachwilowa);
-  //     war3bias[j] = strtold(liniachwilowa.c_str(), NULL);
-  //   }
-  //   if (i == 1230889) {
-  //     j = -1;
-  //   }
-  //   if (i >= 1230890 and i <= 1238729) {
-  //     getline(obiekt5654sds767687, liniachwilowa);
-  //     war3weight[j] = strtold(liniachwilowa.c_str(), NULL);
-  //   }
-  //   j++;
-  //   i++;
-  // }
-  // obiekt5654sds767687.close();
+  std::ifstream parseDataStream(fileNameData, std::ios::binary);
+  if (!parseDataStream) {
+    return 1;
+  }
+  std::vector<double> parsedData(dataSize);
+  parseDataStream.read(reinterpret_cast<char*>(parsedData.data()), dataSize * sizeof(double));
+  //Data to proper vectors here
+  std::cout<<parsedData[0]<<std::endl;
+  parseDataStream.close();
   return 0;
 }
+
+
 
 bool NN::saveData() {
   //   std::ofstream obiekt6d7hd567;
