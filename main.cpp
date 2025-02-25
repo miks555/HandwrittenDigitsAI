@@ -10,9 +10,9 @@
 #define IMAGE_TO_RECOGNIZE_FILENAME "image_to_recognize"
 #define TRAINING_IMAGES_FILENAME "training_images"
 #define TRAINING_LABELS_FILENAME "training_labels"
-#define LAYER_1_NEURON_AMOUNT 784
-#define LAYER_2_NEURON_AMOUNT 200
-#define LAYER_3_NEURON_AMOUNT 10
+#define LAYER_0_NEURON_AMOUNT 784 //image size
+#define LAYER_1_NEURON_AMOUNT 128
+#define LAYER_2_NEURON_AMOUNT 10
 #define RANDOMIZATION_CONST 0.0001
 
 class NN {
@@ -24,8 +24,8 @@ class NN {
   bool recognize(std::string fileNameRecognize);
   private:
   std::string fileNameData;
-  size_t dataSize;
-  std::vector<std::vector<double>> weightsLayers; //weightsLayers[layerIndex][weightIndex]
+  size_t dataSize; //In elements
+  std::vector<std::vector<double>> weightsLayers; //weightsLayers[layerIndex][weightIndex], without input layer (no input parameters)
   std::vector<std::vector<double>> biasesLayers;
   bool randomizeData();
   bool parseData();
@@ -52,20 +52,20 @@ bool NN::initiate(std::string fileNameData, std::vector < unsigned int > layerNe
   this -> dataSize = 0;
   std::cout << "Neural network instance initiated with layout:\n";
   for (size_t i = 0; i < layerNeuronsAmounds.size(); i++) {
-    std::cout << layerNeuronsAmounds[i] << std::endl;
+    std::cout << "Layer "<<i<<", "<<layerNeuronsAmounds[i] << " neurons"<<std::endl;
   }
-  weightsLayers.resize(layerNeuronsAmounds.size());//Number of layers
-  biasesLayers.resize(layerNeuronsAmounds.size());
-  weightsLayers[0].resize(pow(layerNeuronsAmounds[0],2));//Number of pixels same as neurons of 1 layer
-  biasesLayers[0].resize(layerNeuronsAmounds[0]);
-  for (size_t i = 1; i < layerNeuronsAmounds.size();i++)
+  weightsLayers.resize(layerNeuronsAmounds.size()-1); //Number of layers without input layer
+  biasesLayers.resize(layerNeuronsAmounds.size()-1);
+  for (size_t i = 0; i < layerNeuronsAmounds.size()-1;i++)
   {
-    weightsLayers[i].resize(layerNeuronsAmounds[i-1]*layerNeuronsAmounds[i]);
-    biasesLayers[i].resize(layerNeuronsAmounds[i]);
+    weightsLayers[i].resize(layerNeuronsAmounds[i]*layerNeuronsAmounds[i+1]);
+    biasesLayers[i].resize(layerNeuronsAmounds[i+1]);
   }
   for (size_t i = 0; i < weightsLayers.size(); i++) {
     dataSize = dataSize + weightsLayers[i].size() + biasesLayers[i].size();
   }
+  std::cout << "Data size in elements: "<<dataSize<<std::endl;
+  std::cout << "Data size in bytes: "<<dataSize*8<<std::endl;
   if (!checkFileExistence(fileNameData)) {
     std::cerr << "No neural network data found, randomizing...\n";
     if(randomizeData()){
@@ -109,12 +109,9 @@ bool NN::parseData() {
   std::vector<double> parsedData(dataSize);
   parseDataStream.read(reinterpret_cast<char*>(parsedData.data()), dataSize * sizeof(double));
   //Data to proper vectors here
-  std::cout<<parsedData[0]<<std::endl;
   parseDataStream.close();
   return 0;
 }
-
-
 
 bool NN::saveData() {
   //   std::ofstream obiekt6d7hd567;
@@ -412,9 +409,9 @@ bool NN::train(std::string fileNameTrainImages, std::string fileNameTrainLabels)
 int main() {
     NN* network_0 = new NN();
     if (network_0->initiate(NN_DATA_FILENAME, {
+        LAYER_0_NEURON_AMOUNT,
         LAYER_1_NEURON_AMOUNT,
-        LAYER_2_NEURON_AMOUNT,
-        LAYER_3_NEURON_AMOUNT
+        LAYER_2_NEURON_AMOUNT
     })) {
         delete network_0;
         return 1;
