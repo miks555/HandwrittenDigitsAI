@@ -192,9 +192,7 @@ bool NN::recognize(std::string fileNameRecognize) {
   }
   double maxValue = neuronLayers[neuronLayers.size() - 1][0]; //State solution
   int maxIndex = 0;
-  std::cout <<neuronLayers[neuronLayers.size() - 1][0]*100<<std::endl;
   for (int i = 1; i < neuronLayers[neuronLayers.size() - 1].size(); ++i) {
-    std::cout <<neuronLayers[neuronLayers.size() - 1][i]*100<<std::endl;
     if (neuronLayers[neuronLayers.size() - 1][i] > maxValue) {
       maxValue = neuronLayers[neuronLayers.size() - 1][i];
       maxIndex = i;
