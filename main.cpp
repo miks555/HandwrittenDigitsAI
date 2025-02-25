@@ -13,7 +13,6 @@
 #define LAYER_0_NEURON_AMOUNT 784 //image size
 #define LAYER_1_NEURON_AMOUNT 128
 #define LAYER_2_NEURON_AMOUNT 10
-#define RANDOMIZATION_CONST 0.001
 
 class NN {
   public: 
@@ -22,13 +21,13 @@ class NN {
   bool initiate(std::string fileNameData, std::vector < unsigned int > layerNeuronAmounds);
   bool train(std::string fileNameTrainImages, std::string fileNameTrainLabels);
   bool recognize(std::string fileNameRecognize);
+  bool randomizeData();
   private:
   std::string fileNameData;
   size_t dataSize; //In elements
   std::vector<std::vector<double>> weightLayers; //weightLayers[layerIndex][weightIndex], neuronLayers size -1 (input layer)
   std::vector<std::vector<double>> biasLayers;
   std::vector<std::vector<double>> neuronLayers;
-  bool randomizeData();
   bool parseData();
   bool saveData();
   bool checkFileExistence(std::string fileName);
@@ -78,11 +77,12 @@ bool NN::initiate(std::string fileNameData, std::vector < unsigned int > layerNe
       std::cerr<<"Data randomization error\n";
       return 1;
     }
-  }
+  }else{
   std::cout << "Parsing neural network data...\n";
   if(parseData()){
     std::cerr<<"Data parsing error\n";
     return 1;
+  }
   }
   std::cout << "Network initiated\n";
   return 0;
@@ -94,16 +94,19 @@ bool NN::checkFileExistence(std::string fileName) {
 }
 
 bool NN::randomizeData() {
-  std::ofstream dataStream(fileNameData, std::ios::binary);
   srand(static_cast<unsigned int>(time(NULL)));
-  for (size_t i = 0; i < dataSize; i++) {
-    double randomValue = static_cast<double>(std::rand()) / RAND_MAX * RANDOMIZATION_CONST;
-    dataStream.write(reinterpret_cast <const char *> ( & randomValue), sizeof(randomValue));
+  for (size_t i = 0; i < weightLayers.size(); i++) {
+    size_t n_in = neuronLayers[i].size();
+    size_t n_out = neuronLayers[i+1].size();
+    double limit = sqrt(6.0 / (n_in + n_out));
+    for (size_t j = 0; j < weightLayers[i].size(); j++) {
+      weightLayers[i][j] = (static_cast<double>(std::rand()) / RAND_MAX) * 2 * limit - limit;
+    }
+    for (size_t j = 0; j < biasLayers[i].size(); j++) {
+      biasLayers[i][j] = 0.0;
+    }
   }
-  dataStream.close();
-  if(!checkFileExistence(fileNameData)){
-    return 1;
-  }
+  saveData();
   return 0;
 }
 
@@ -154,6 +157,9 @@ bool NN::saveData() {
   }
   saveDataStream.write(reinterpret_cast<const char*>(saveData.data()), saveData.size() * sizeof(double));
   saveDataStream.close();
+  if(!checkFileExistence(fileNameData)){
+    return 1;
+  }
   return 0;
 }
 
