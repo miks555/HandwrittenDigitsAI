@@ -13,20 +13,21 @@
 #define LAYER_0_NEURON_AMOUNT 784 //image size
 #define LAYER_1_NEURON_AMOUNT 128
 #define LAYER_2_NEURON_AMOUNT 10
-#define RANDOMIZATION_CONST 0.0001
+#define RANDOMIZATION_CONST 0.001
 
 class NN {
   public: 
   NN();
   ~NN();
-  bool initiate(std::string fileNameData, std::vector < unsigned int > layerNeuronsAmounds);
+  bool initiate(std::string fileNameData, std::vector < unsigned int > layerNeuronAmounds);
   bool train(std::string fileNameTrainImages, std::string fileNameTrainLabels);
   bool recognize(std::string fileNameRecognize);
   private:
   std::string fileNameData;
   size_t dataSize; //In elements
-  std::vector<std::vector<double>> weightsLayers; //weightsLayers[layerIndex][weightIndex], without input layer (no input parameters)
-  std::vector<std::vector<double>> biasesLayers;
+  std::vector<std::vector<double>> weightLayers; //weightLayers[layerIndex][weightIndex], neuronLayers size -1 (input layer)
+  std::vector<std::vector<double>> biasLayers;
+  std::vector<std::vector<double>> neuronLayers;
   bool randomizeData();
   bool parseData();
   bool saveData();
@@ -47,25 +48,30 @@ double NN::sigmoid(double num) {
   return 1.0 / (1.0 + pow(M_E, -1.0*num));
 }
 
-bool NN::initiate(std::string fileNameData, std::vector < unsigned int > layerNeuronsAmounds){
+bool NN::initiate(std::string fileNameData, std::vector < unsigned int > layerNeuronAmounds){
   this -> fileNameData = fileNameData;
   this -> dataSize = 0;
-  std::cout << "Neural network instance initiated with layout:\n";
-  for (size_t i = 0; i < layerNeuronsAmounds.size(); i++) {
-    std::cout << "Layer "<<i<<", "<<layerNeuronsAmounds[i] << " neurons"<<std::endl;
-  }
-  weightsLayers.resize(layerNeuronsAmounds.size()-1); //Number of layers without input layer
-  biasesLayers.resize(layerNeuronsAmounds.size()-1);
-  for (size_t i = 0; i < layerNeuronsAmounds.size()-1;i++)
+  neuronLayers.resize(layerNeuronAmounds.size());
+  for (size_t i = 0; i < neuronLayers.size();i++)
   {
-    weightsLayers[i].resize(layerNeuronsAmounds[i]*layerNeuronsAmounds[i+1]);
-    biasesLayers[i].resize(layerNeuronsAmounds[i+1]);
+    neuronLayers[i].resize(layerNeuronAmounds[i]);
   }
-  for (size_t i = 0; i < weightsLayers.size(); i++) {
-    dataSize = dataSize + weightsLayers[i].size() + biasesLayers[i].size();
+  std::cout << "Neural network instance initiated with layout:\n";
+  for (size_t i = 0; i < neuronLayers.size(); i++) {
+    std::cout << "Layer "<<i<<", "<<neuronLayers[i].size() << " neurons"<<std::endl;
+  }
+  weightLayers.resize(layerNeuronAmounds.size()-1); //Number of layers without input layer
+  biasLayers.resize(layerNeuronAmounds.size()-1);
+  for (size_t i = 0; i < layerNeuronAmounds.size()-1;i++)
+  {
+    weightLayers[i].resize(layerNeuronAmounds[i]*layerNeuronAmounds[i+1]);
+    biasLayers[i].resize(layerNeuronAmounds[i+1]);
+  }
+  for (size_t i = 0; i < weightLayers.size(); i++) {
+    dataSize = dataSize + weightLayers[i].size() + biasLayers[i].size();
   }
   std::cout << "Data size in elements: "<<dataSize<<std::endl;
-  std::cout << "Data size in bytes: "<<dataSize*8<<std::endl;
+  std::cout << "Data size in bytes: "<<dataSize*sizeof(double)<<std::endl;
   if (!checkFileExistence(fileNameData)) {
     std::cerr << "No neural network data found, randomizing...\n";
     if(randomizeData()){
@@ -91,7 +97,7 @@ bool NN::randomizeData() {
   std::ofstream dataStream(fileNameData, std::ios::binary);
   srand(static_cast<unsigned int>(time(NULL)));
   for (size_t i = 0; i < dataSize; i++) {
-    double randomValue = (double) rand() / RAND_MAX * RANDOMIZATION_CONST;
+    double randomValue = static_cast<double>(std::rand()) / RAND_MAX * RANDOMIZATION_CONST;
     dataStream.write(reinterpret_cast <const char *> ( & randomValue), sizeof(randomValue));
   }
   dataStream.close();
@@ -108,36 +114,47 @@ bool NN::parseData() {
   }
   std::vector<double> parsedData(dataSize);
   parseDataStream.read(reinterpret_cast<char*>(parsedData.data()), dataSize * sizeof(double));
-  //Data to proper vectors here
   parseDataStream.close();
+  size_t parsedDataIndex = 0;
+  for(size_t i = 0 ; i < weightLayers.size();i++)
+  {
+    for(size_t j = 0 ; j < biasLayers[i].size();j++)
+    {
+      if (parsedDataIndex >= parsedData.size()) {
+        return 1;
+      }
+      biasLayers[i][j] = parsedData[parsedDataIndex];
+      parsedDataIndex++;
+    }
+    for(size_t j = 0 ; j < weightLayers[i].size();j++)
+    {
+      if (parsedDataIndex >= parsedData.size()) {
+        return 1;
+      }
+      weightLayers[i][j] = parsedData[parsedDataIndex];
+      parsedDataIndex++;
+    }
+  }
   return 0;
 }
 
 bool NN::saveData() {
-  //   std::ofstream obiekt6d7hd567;
-  //   obiekt6d7hd567.open(NN_DATA_FILENAME, std::ios::trunc);
-  //   obiekt6d7hd567 << std::fixed;
-  //   obiekt6d7hd567 << std::setprecision(10);
-  //   for (size_t i = 0; i < 784; i++) {
-  //     obiekt6d7hd567 << war1bias[i] << std::endl;
-  //   }
-  //   for (size_t i = 0; i < 614656; i++) {
-  //     obiekt6d7hd567 << war1weight[i] << std::endl;
-  //   }
-  //   for (size_t i = 0; i < 784; i++) {
-  //     obiekt6d7hd567 << war2bias[i] << std::endl;
-  //   }
-  //   for (size_t i = 0; i < 614656; i++) {
-  //     obiekt6d7hd567 << war2weight[i] << std::endl;
-  //   }
-  //   for (size_t i = 0; i < 10; i++) {
-  //     obiekt6d7hd567 << war3bias[i] << std::endl;
-  //   }
-  //   for (size_t i = 0; i < 7840; i++) {
-  //     obiekt6d7hd567 << war3weight[i] << std::endl;
-  //   }
-  //   obiekt6d7hd567.close();
-  // }
+  std::ofstream saveDataStream(fileNameData, std::ios::binary);
+  if (!saveDataStream) {
+    return 1;
+  }
+  std::vector<double> saveData;
+  for (size_t i = 0; i < weightLayers.size(); i++) {
+    for (size_t j = 0; j < biasLayers[i].size(); j++) {
+      saveData.push_back(biasLayers[i][j]);
+    }
+    for (size_t j = 0; j < weightLayers[i].size(); j++) {
+      saveData.push_back(weightLayers[i][j]);
+    }
+  }
+  saveDataStream.write(reinterpret_cast<const char*>(saveData.data()), saveData.size() * sizeof(double));
+  saveDataStream.close();
+  return 0;
 }
 
 bool NN::recognize(std::string fileNameRecognize) {
@@ -149,57 +166,35 @@ bool NN::recognize(std::string fileNameRecognize) {
       "The said file was not detected.\n";
     return 1;
   }
-  //  double * war0val = new  double[784]; /////wartosci
-  //  double * war1val = new  double[784];
-  //  double * war2val = new  double[784];
-  //  double * war3val = new  double[10];
-  // char * pomoc345345 = new char[784];
-  // std::ifstream obiekt87986; //////wczytanie zdjencia
-  // obiekt87986.open(IMAGE_TO_RECOGNIZE_FILENAME, std::ios::binary);
-  // obiekt87986.read(pomoc345345, 784);
-  // for (size_t i = 0; i < 784; i++) {
-  //   if (static_cast < int > (pomoc345345[i]) < 0) {
-  //     war0val[i] = (256.0 + static_cast <  double > (pomoc345345[i])) / 255.00;
-  //   } else {
-  //     war0val[i] = (static_cast <  double > (pomoc345345[i])) / 255.00;
-  //   }
-  // }
-  // obiekt87986.close();
-  // for (size_t i = 0; i < 784; i++) ///pierwsza warstwa
-  // {
-  //    double pomoc4358345h8i = 0.0;
-  //   for (size_t j = 0; j < 784; j++) {
-  //     pomoc4358345h8i = pomoc4358345h8i + war0val[j] * war1weight[j + 784 * i];
-  //   }
-  //   war1val[i] = sigmoid(war1bias[i] + pomoc4358345h8i);
-  // }
-  // for (size_t i = 0; i < 784; i++) ///druga warstwa
-  // {
-  //   double pomoc345f345f = 0.0;
-  //   for (size_t j = 0; j < 784; j++) {
-  //     pomoc345f345f = pomoc345f345f + war1val[j] * war2weight[j + 784 * i];
-  //   }
-  //   war2val[i] = sigmoid(war2bias[i] + pomoc345f345f);
-  // }
-  // for (size_t i = 0; i < 10; i++) ///trzecia warstwa
-  // {
-  //   double pomoc564g6 = 0.0;
-  //   for (size_t j = 0; j < 784; j++) {
-  //     pomoc564g6 = pomoc564g6 + war2val[j] * war3weight[j + 784 * i];
-  //   }
-  //   war3val[i] = sigmoid(war3bias[i] + pomoc564g6);
-  // }
-  // double max1dd23423 = 0.0; ////wypisanie najprawdopodobniejszych/ej
-  // for (size_t i = 0; i < 10; i++) {
-  //   if (max1dd23423 < war3val[i]) {
-  //     max1dd23423 = war3val[i];
-  //   }
-  // }
-  // for (size_t i = 0; i < 10; i++) {
-  //   if (max1dd23423 == war3val[i]) {
-  //     std::cout << std::fixed << i << " sure for " << war3val[i] * 100 << "%\n";
-  //   }
-  // }
+  unsigned char dataChar;
+  neuronLayers[0].resize(0); //To use push_back
+  while (fileRecognizeStream.read(reinterpret_cast < char * > ( & dataChar), sizeof(dataChar))) {
+    neuronLayers[0].push_back((static_cast < unsigned int > (dataChar)) / 255.0); //Normalize 0 - 255 to 0.0 - 1.0
+  }
+  fileRecognizeStream.close();
+  for (size_t i = 1; i < neuronLayers.size(); i++) //For all layers except input layer 0
+  {
+    for (size_t j = 0; j < neuronLayers[i].size(); j++) //For all neurons
+    {
+      double activationSum = 0;
+      for (size_t k = 0; k < neuronLayers[i - 1].size(); k++) //For all neurons connected to neuron
+      {
+        activationSum = activationSum + neuronLayers[i - 1][k] * weightLayers[i - 1][k + j * neuronLayers[i - 1].size()];
+      }
+      neuronLayers[i][j] = sigmoid(biasLayers[i - 1][j] + activationSum);
+    }
+  }
+  double maxValue = neuronLayers[neuronLayers.size() - 1][0]; //State solution
+  int maxIndex = 0;
+  std::cout <<neuronLayers[neuronLayers.size() - 1][0]*100<<std::endl;
+  for (int i = 1; i < neuronLayers[neuronLayers.size() - 1].size(); ++i) {
+    std::cout <<neuronLayers[neuronLayers.size() - 1][i]*100<<std::endl;
+    if (neuronLayers[neuronLayers.size() - 1][i] > maxValue) {
+      maxValue = neuronLayers[neuronLayers.size() - 1][i];
+      maxIndex = i;
+    }
+  }
+  std::cout << "Digit recognized: " << maxIndex << ", confidence: " << maxValue * 100.0 << "%\n";
   return 0;
 }
 
