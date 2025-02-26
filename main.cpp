@@ -258,7 +258,7 @@ bool NN::train(std::string fileNameTrainData, std::string fileNameTrainLabels) {
     if (i % (trainSetSize / 1000) == 0) //Progress info
     {
       clearConsole();
-      std::cout << std::fixed << std::setprecision(1) << "Training progress: " << ((i * 100.0) / trainSetSize) << "%\n" << g / (trainSetSize / 1000.0) * 100;
+      std::cout << std::fixed << std::setprecision(1) << "Training progress: " << ((i * 100.0) / trainSetSize) << "%\n";
     }
   }
   trainLabelsStream.close();
