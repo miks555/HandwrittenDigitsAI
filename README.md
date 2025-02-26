@@ -1,7 +1,8 @@
 # HandwrittenDigitsAI
 under development!
 
-This project implements a neural network in C++ for recognizing handwritten digits.
+This project implements a neural network in C++ for recognizing handwritten digits, I converted my old code to object-oriented programming and added a backpropagation algorithm, reducing the training time from 11 years to 4.25 minutes.
+
 The network is structured with three layers:
   - Layer 0: image values in scale (0.0,1.0)
   - Layer 1: 128 neurons.
