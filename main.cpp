@@ -13,6 +13,7 @@
 #define LAYER_0_NEURON_AMOUNT 784 //Input data size
 #define LAYER_1_NEURON_AMOUNT 128
 #define LAYER_2_NEURON_AMOUNT 10
+#define LEARNING_RATE 0.1
 
 class NN {
   public: 
@@ -28,11 +29,17 @@ class NN {
   std::vector<std::vector<double>> weightLayers; //weightLayers[layerIndex][weightIndex], neuronLayers size -1 (input layer)
   std::vector<std::vector<double>> biasLayers;
   std::vector<std::vector<double>> neuronLayers;
+  std::vector<std::vector<double>> weightLayersGradient;
+  std::vector<std::vector<double>> biasLayersGradient;
+  std::vector<std::vector<double>> neuronLayersSums;
   bool parseData();
   bool saveData();
   bool checkFileExistence(std::string fileName);
-  double sigmoid(double num);
   bool propagateForward();
+  bool propagateBackward(unsigned int label);
+  double MeanSquaredErrorDerivative(double num, double target);
+  double sigmoid(double num);
+  double sigmoidDerivative(double num);
   bool clearConsole();
 };
 
@@ -48,13 +55,23 @@ double NN::sigmoid(double num) {
   return 1.0 / (1.0 + pow(M_E, -1.0*num));
 }
 
+double NN::sigmoidDerivative(double num) {
+   return sigmoid(num) * (1.0 - sigmoid(num));
+}
+
+double NN::MeanSquaredErrorDerivative(double num, double target) {
+   return 2.0*(num - target);
+}
+
 bool NN::initiate(std::string fileNameData, std::vector < unsigned int > layerNeuronAmounds){
   this -> fileNameData = fileNameData;
   this -> dataSize = 0;
   neuronLayers.resize(layerNeuronAmounds.size());
+  neuronLayersSums.resize(layerNeuronAmounds.size());
   for (size_t i = 0; i < neuronLayers.size();i++)
   {
     neuronLayers[i].resize(layerNeuronAmounds[i]);
+    neuronLayersSums[i].resize(layerNeuronAmounds[i]);
   }
   std::cout << "Neural network instance initiated with layout:\n";
   for (size_t i = 0; i < neuronLayers.size(); i++) {
@@ -62,10 +79,14 @@ bool NN::initiate(std::string fileNameData, std::vector < unsigned int > layerNe
   }
   weightLayers.resize(layerNeuronAmounds.size()-1); //Number of layers without input layer
   biasLayers.resize(layerNeuronAmounds.size()-1);
+  weightLayersGradient.resize(layerNeuronAmounds.size()-1);
+  biasLayersGradient.resize(layerNeuronAmounds.size()-1);
   for (size_t i = 0; i < layerNeuronAmounds.size()-1;i++)
   {
     weightLayers[i].resize(layerNeuronAmounds[i]*layerNeuronAmounds[i+1]);
     biasLayers[i].resize(layerNeuronAmounds[i+1]);
+    weightLayersGradient[i].resize(layerNeuronAmounds[i]*layerNeuronAmounds[i+1]);
+    biasLayersGradient[i].resize(layerNeuronAmounds[i+1]);
   }
   for (size_t i = 0; i < weightLayers.size(); i++) {
     dataSize = dataSize + weightLayers[i].size() + biasLayers[i].size();
@@ -175,6 +196,7 @@ bool NN::propagateForward(){
         activationSum = activationSum + neuronLayers[i - 1][k] * weightLayers[i - 1][k + j * neuronLayers[i - 1].size()];
       }
       neuronLayers[i][j] = sigmoid(biasLayers[i - 1][j] + activationSum);
+      neuronLayersSums[i][j] = biasLayers[i - 1][j] + activationSum;
     }
   }
 }
@@ -215,236 +237,80 @@ bool NN::recognize(std::string fileNameRecognize) {
 bool NN::train(std::string fileNameTrainData, std::string fileNameTrainLabels) {
   std::ifstream trainLabelsStream(fileNameTrainLabels);
   if (!trainLabelsStream) {
-    std::cerr <<fileNameTrainLabels<<" not found\n";
+    std::cerr << fileNameTrainLabels << " not found\n";
     return 1;
   }
   std::ifstream trainDataStream(fileNameTrainData);
   if (!trainDataStream) {
-    std::cerr <<fileNameTrainLabels<<" not found\n";
+    std::cerr << fileNameTrainLabels << " not found\n";
     return 1;
   }
-  trainLabelsStream.seekg(0,std::ios::end);
-  size_t trainSetSize = trainLabelsStream.tellg();//In elements
+  trainLabelsStream.seekg(0, std::ios::end);
+  size_t trainSetSize = trainLabelsStream.tellg(); //Input elements
   trainLabelsStream.seekg(0, std::ios::beg);
-  
-  for(size_t i = 0 ; i < trainSetSize;i++){//For all training elements
-    unsigned int label = static_cast<unsigned int>(static_cast<unsigned char>(trainLabelsStream.get()));//Read current label
-    for(size_t j = 0 ; j < neuronLayers[0].size();j++){//Read current data
-      neuronLayers[0][j] = (static_cast<unsigned int>(static_cast<unsigned char>(trainDataStream.get())))/255.0;
+  for (size_t i = 0; i < trainSetSize; i++) { //For all training elements
+    unsigned int label = static_cast < unsigned int > (static_cast < unsigned char > (trainLabelsStream.get())); //Read current label
+    for (size_t j = 0; j < neuronLayers[0].size(); j++) { //Read current data
+      neuronLayers[0][j] = (static_cast < unsigned int > (static_cast < unsigned char > (trainDataStream.get()))) / 255.0;
     }
     propagateForward();
-
-
-
-
-
-
-    if(i%(trainSetSize/1000)==0)//Progress info
+    propagateBackward(label);
+    if (i % (trainSetSize / 1000) == 0) //Progress info
     {
       clearConsole();
-      std::cout << std::fixed << std::setprecision(1)<<"Training progress: "<<((i*100.0)/trainSetSize)<<"%\n";
+      std::cout << std::fixed << std::setprecision(1) << "Training progress: " << ((i * 100.0) / trainSetSize) << "%\n" << g / (trainSetSize / 1000.0) * 100;
     }
   }
-
-
-
-  // unsigned char dataChar;
-  // neuronLayers[0].resize(0); //To use push_back
-  // while (fileRecognizeStream.read(reinterpret_cast < char * > ( & dataChar), sizeof(dataChar))) {
-  //   neuronLayers[0].push_back((static_cast < unsigned int > (dataChar)) / 255.0); //Normalize 0 - 255 to 0.0 - 1.0
-  // }
-  // fileRecognizeStream.close();
-  // //////////////////////////////////////////////
-  // std::ifstream obiekt456g546g54634e5;
-  // obiekt456g546g54634e5.open(TRAINING_LABELS, std::ios::binary);
-  // obiekt456g546g54634e5.seekg(0, std::ios::end);
-  // unsigned long long * ilosc = new unsigned long long[1]; ////ile zdjenc
-  // * ilosc = obiekt456g546g54634e5.tellg();
-  // double * img = new double[ * ilosc * 784]; //////foto
-  // double * lab = new double[ * ilosc]; //////oznaczenia
-  // obiekt456g546g54634e5.seekg(0, std::ios::beg);
-  // char * pomoc43f5345f34 = new char[ * ilosc];
-  // obiekt456g546g54634e5.read(pomoc43f5345f34, * ilosc);
-  // obiekt456g546g54634e5.close();
-  // for (size_t i = 0; i < * ilosc; i++) {
-  //   lab[i] = static_cast < double > (pomoc43f5345f34[i]);
-  // }
-  // std::ifstream obiekt9990;
-  // obiekt9990.open(TRAINING_IMAGES, std::ios::binary);
-  // char * pomoc6g5464h7 = new char[ * ilosc * 784];
-  // obiekt9990.read(pomoc6g5464h7, * ilosc * 784);
-  // obiekt9990.close();
-  // for (size_t i = 0; i < * ilosc * 784; i++) {
-  //   if (static_cast < int > (pomoc6g5464h7[i]) < 0) {
-  //     img[i] = (256 + static_cast < double > (pomoc6g5464h7[i])) / 255;
-  //   } else {
-  //     img[i] = (static_cast < double > (pomoc6g5464h7[i])) / 255;
-  //   }
-  // }
-  // //////////calculus
-  // double * war0val = new double[784]; /////wartosci
-  // double * war1val = new double[784];
-  // double * war2val = new double[784];
-  // double * war3val = new double[10];
-  // double * gradient = new double[1238730];
-  // double * c = new double[1];//zerowane
-  // double * c_exp = new double[1];//zerowane
-  // double * lab_comp = new double[10];
-  // double * small = new double[1];
-  // * small = 0.12;
-  // //zerowanie gradientu
-  // for (size_t ti = 0; ti < 1238730; ti++) {
-  //   gradient[ti] = 0;
-  // }
-  // //////////////////iteracja gurna
-  // for (size_t i = 0; i < * zakres_n; i++) {
-  //   *c=0;
-  // ///////liczymy c
-  //   for (size_t tt = 0; tt < 784; tt++) //war 0
-  //   {
-  //     war0val[tt] = img[tt + 784 * i];
-  //   }
-  //   for (size_t yy = 0; yy < 784; yy++) ///pierwsza warstwa
-  //   {
-  //     double pomoc4358345h8i = 0.0;
-  //     for (size_t hh = 0; hh < 784; hh++) {
-  //       pomoc4358345h8i = pomoc4358345h8i + war0val[hh] * war1weight[hh + 784 * yy];
-  //     }
-  //     war1val[yy] = sigmoid(war1bias[yy] + pomoc4358345h8i);
-  //   }
-  //   for (size_t yy = 0; yy < 784; yy++) ///druga warstwa
-  //   {
-  //     double pomoc4358345h8i = 0.0;
-  //     for (size_t hh = 0; hh < 784; hh++) {
-  //       pomoc4358345h8i = pomoc4358345h8i + war1val[hh] * war2weight[hh + 784 * yy];
-  //     }
-  //     war2val[yy] = sigmoid(war2bias[yy] + pomoc4358345h8i);
-  //   }
-  //   for (size_t nn = 0; nn < 10; nn++) ///trzecia warstwa
-  //   {
-  //     double pomoc564g6 = 0.0;
-  //     for (size_t uu = 0; uu < 784; uu++) {
-  //       pomoc564g6 = pomoc564g6 + war2val[uu] * war3weight[uu + 784 * nn];
-  //     }
-  //     war3val[nn] = sigmoid(war3bias[nn] + pomoc564g6);
-  //   }
-  //   ////////////koniec wyliczania wartosci
-  //   for (size_t ggg = 0; ggg < 10; ggg++) {
-  //     if (lab[i] == ggg) {
-  //       lab_comp[ggg] = 1;
-  //     } else {
-  //       lab_comp[ggg] = 0;
-  //     }
-  //   }
-  //   for (size_t vhv = 0; vhv < 10; vhv++) {
-  //     * c = * c + (lab_comp[vhv] - war3val[vhv]) * (lab_comp[vhv] - war3val[vhv]); ///////////////////////////////////////////////////////////////////////////////////*0.5 ??
-  //   }
-  //   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////iteracja zagnierzdzona
-  //   for (size_t bbi = 0; bbi < 1238730; bbi++) {
-  //   	* c_exp=0;
-  //     if(bbi%6194==0)
-  //     {
-  //   std::cout<<"training "<<(bbi/1238730.0*100)/(*zakres_n)<<"% do not interrupt\n";
-  //   }
-  //   //podmiana
-  //     if (bbi <= 783) {
-  //       war1bias[bbi] = war1bias[bbi] + * small;
-  //     } //{0 - 783}
-  //     if (bbi >= 784 && bbi <= 615439) {
-  //       war1weight[bbi - 784] = war1weight[bbi - 784] + * small;
-  //     } //{784 - 615439}
-  //     if (bbi >= 615440 && bbi <= 616223) {
-  //       war2bias[bbi - 615440] = war2bias[bbi - 615440] + * small;
-  //     } //{615440 - 616223}
-  //     if (bbi >= 616224 && bbi <= 1230879) {
-  //       war2weight[bbi - 616224] = war2weight[bbi - 616224] + * small;
-  //     } //{616224 - 1230879}
-  //     if (bbi >= 1230880 && bbi <= 1230889) {
-  //       war3bias[bbi - 1230880] = war3bias[bbi - 1230880] + * small;
-  //     } //{1230880 - 1230889}
-  //     if (bbi >= 1230890) {
-  //       war3weight[bbi - 1230890] = war3weight[bbi - 1230890] + * small;
-  //     } //{1230890 - 1238729}
-  //     //////////////////////////////////////////////////////////////////////////////////kalkulacja c_exp
-  //     for (size_t yy = 0; yy < 784; yy++) ///pierwsza warstwa
-  //     {
-  //       double pomoc4358345h8i = 0.0;
-  //       for (size_t hh = 0; hh < 784; hh++) {
-  //         pomoc4358345h8i = pomoc4358345h8i + war0val[hh] * war1weight[hh + 784 * yy];
-  //       }
-  //       war1val[yy] = sigmoid(war1bias[yy] + pomoc4358345h8i);
-  //     }
-  //     for (size_t yy = 0; yy < 784; yy++) ///druga warstwa
-  //     {
-  //       double pomoc4358345h8i = 0.0;
-  //       for (size_t hh = 0; hh < 784; hh++) {
-  //         pomoc4358345h8i = pomoc4358345h8i + war1val[hh] * war2weight[hh + 784 * yy];
-  //       }
-  //       war2val[yy] = sigmoid(war2bias[yy] + pomoc4358345h8i);
-  //     }
-  //     for (size_t nn = 0; nn < 10; nn++) ///trzecia warstwa
-  //     {
-  //       double pomoc564g6 = 0.0;
-  //       for (size_t uu = 0; uu < 784; uu++) {
-  //         pomoc564g6 = pomoc564g6 + war2val[uu] * war3weight[uu + 784 * nn];
-  //       }
-  //       war3val[nn] = sigmoid(war3bias[nn] + pomoc564g6);
-  //     }
-  //     ////////////////////////////////////////////////////////////////////////////////////////////////
-  //     for (size_t asdd = 0; asdd < 10; asdd++) {
-  //       * c_exp = * c_exp + (lab_comp[asdd] - war3val[asdd]) * (lab_comp[asdd] - war3val[asdd]); ///////////////////////////////////////////////////////////////////////////////////*0.5 ??
-  //     }
-  //     //odmiana
-  //     if (bbi <= 783) {
-  //       war1bias[bbi] = war1bias[bbi] - * small;
-  //     } //{0 - 783}
-  //     if (bbi >= 784 && bbi <= 615439) {
-  //       war1weight[bbi - 784] = war1weight[bbi - 784] - * small;
-  //     } //{784 - 615439}
-  //     if (bbi >= 615440 && bbi <= 616223) {
-  //       war2bias[bbi - 615440] = war2bias[bbi - 615440] - * small;
-  //     } //{615440 - 616223}
-  //     if (bbi >= 616224 && bbi <= 1230879) {
-  //       war2weight[bbi - 616224] = war2weight[bbi - 616224] - * small;
-  //     } //{616224 - 1230879}
-  //     if (bbi >= 1230880 && bbi <= 1230889) {
-  //       war3bias[bbi - 1230880] = war3bias[bbi - 1230880] - * small;
-  //     } //{1230880 - 1230889}
-  //     if (bbi >= 1230890) {
-  //       war3weight[bbi - 1230890] = war3weight[bbi - 1230890] - * small;
-  //     } //{1230890 - 1238729}
-  //     //append
-  //   gradient[bbi] = gradient[bbi] + ( *c_exp - *c) / ( * small);
-  //   }
-  //   /////////////////end
-  // }
-  // for (size_t ddd = 0; ddd < 1238730; ddd++) {
-  //   gradient[ddd] = gradient[ddd] * 0.01 / ( * zakres_n);
-  //   if (ddd <= 783) {
-  //     war1bias[ddd] = war1bias[ddd] - gradient[ddd];
-  //   } //{0 - 783}
-  //   if (ddd >= 784 && ddd <= 615439) {
-  //     war1weight[ddd - 784] = war1weight[ddd - 784] - gradient[ddd];
-  //   } //{784 - 615439}
-  //   if (ddd >= 615440 && ddd <= 616223) {
-  //     war2bias[ddd - 615440] = war2bias[ddd - 615440] - gradient[ddd];
-  //   } //{615440 - 616223}
-  //   if (ddd >= 616224 && ddd <= 1230879) {
-  //     war2weight[ddd - 616224] = war2weight[ddd - 616224] - gradient[ddd];
-  //   } //{616224 - 1230879}
-  //   if (ddd >= 1230880 && ddd <= 1230889) {
-  //     war3bias[ddd - 1230880] = war3bias[ddd - 1230880] - gradient[ddd];
-  //   } //{1230880 - 1230889}
-  //   if (ddd >= 1230890) {
-  //     war3weight[ddd - 1230890] = war3weight[ddd - 1230890] - gradient[ddd];
-  //   } //{1230890 - 1238729}
-  // }
-  //////////////////////////////////////////////////////////////////////////////////
   trainLabelsStream.close();
   trainDataStream.close();
   saveData();
   clearConsole();
   std::cout << "Training completed\n";
+  return 0;
+}
+
+bool NN::propagateBackward(unsigned int label) {
+  for (size_t i = neuronLayers.size() - 1; i >= 1; i--) { // For every layer
+    if (i == neuronLayers.size() - 1) { // Output layer
+      for (size_t j = 0; j < neuronLayers[i].size(); j++) { // For every neuron
+        double error;
+        if (j == label) {
+          error = MeanSquaredErrorDerivative(neuronLayers[i][j], 1.0) * sigmoidDerivative(neuronLayersSums[i][j]);
+        } else {
+          error = MeanSquaredErrorDerivative(neuronLayers[i][j], 0.0) * sigmoidDerivative(neuronLayersSums[i][j]);
+        }
+        neuronLayers[i][j] = error; //Propagating error in default structure
+        for (size_t k = 0; k < neuronLayers[i - 1].size(); k++) {
+          weightLayersGradient[i - 1][k + j * neuronLayers[i - 1].size()] = error * neuronLayers[i - 1][k];
+        }
+        biasLayersGradient[i - 1][j] = error;
+      }
+    } else { // Hidden layers
+      for (size_t j = 0; j < neuronLayers[i].size(); j++) { // For every neuron
+        double backActivation = 0.0;
+        for (size_t k = 0; k < neuronLayers[i + 1].size(); k++) {
+          backActivation = backActivation + neuronLayers[i + 1][k] * weightLayers[i][k + j + k * neuronLayers[i].size()];
+        }
+        double error = sigmoidDerivative(neuronLayersSums[i][j]) * backActivation;
+        neuronLayers[i][j] = error;
+        for (size_t k = 0; k < neuronLayers[i - 1].size(); k++) {
+          weightLayersGradient[i - 1][k + j * neuronLayers[i - 1].size()] = error * neuronLayers[i - 1][k];
+        }
+        biasLayersGradient[i - 1][j] = error;
+      }
+    }
+  }
+  //Update weights and biases
+  for (size_t i = 0; i < biasLayers.size(); i++) {
+    for (size_t j = 0; j < biasLayers[i].size(); j++) {
+      biasLayers[i][j] = biasLayers[i][j] - LEARNING_RATE * biasLayersGradient[i][j];
+    }
+  }
+  for (size_t i = 0; i < weightLayers.size(); i++) {
+    for (size_t j = 0; j < weightLayers[i].size(); j++) {
+      weightLayers[i][j] = weightLayers[i][j] - LEARNING_RATE * weightLayersGradient[i][j];
+    }
+  }
   return 0;
 }
 
