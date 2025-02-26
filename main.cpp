@@ -7,10 +7,10 @@
 #include <vector>
 
 #define NN_DATA_FILENAME "nn_data"
-#define IMAGE_TO_RECOGNIZE_FILENAME "image_to_recognize"
-#define TRAINING_IMAGES_FILENAME "training_images"
+#define DATA_TO_RECOGNIZE_FILENAME "image_to_recognize"
+#define TRAINING_DATA_FILENAME "training_images"
 #define TRAINING_LABELS_FILENAME "training_labels"
-#define LAYER_0_NEURON_AMOUNT 784 //image size
+#define LAYER_0_NEURON_AMOUNT 784 //Input data size
 #define LAYER_1_NEURON_AMOUNT 128
 #define LAYER_2_NEURON_AMOUNT 10
 
@@ -19,7 +19,7 @@ class NN {
   NN();
   ~NN();
   bool initiate(std::string fileNameData, std::vector < unsigned int > layerNeuronAmounds);
-  bool train(std::string fileNameTrainImages, std::string fileNameTrainLabels);
+  bool train(std::string fileNameTrainData, std::string fileNameTrainLabels);
   bool recognize(std::string fileNameRecognize);
   bool randomizeData();
   private:
@@ -32,6 +32,8 @@ class NN {
   bool saveData();
   bool checkFileExistence(std::string fileName);
   double sigmoid(double num);
+  bool propagateForward();
+  bool clearConsole();
 };
 
 NN::NN() {
@@ -40,7 +42,6 @@ NN::NN() {
 
 NN::~NN() {
   std::cout << "Neural network instance deleted\n";
-  //Free RAM here
 }
 
 double NN::sigmoid(double num) {
@@ -163,21 +164,7 @@ bool NN::saveData() {
   return 0;
 }
 
-bool NN::recognize(std::string fileNameRecognize) {
-  std::ifstream fileRecognizeStream(fileNameRecognize);
-  if (!fileRecognizeStream) {
-    std::cerr << "Provide a photo file named " <<
-      fileNameRecognize <<
-      ", 28x28px (784 bytes with a brightness degree of 0-255) written left-to-right from top to bottom. " <<
-      "The said file was not detected.\n";
-    return 1;
-  }
-  unsigned char dataChar;
-  neuronLayers[0].resize(0); //To use push_back
-  while (fileRecognizeStream.read(reinterpret_cast < char * > ( & dataChar), sizeof(dataChar))) {
-    neuronLayers[0].push_back((static_cast < unsigned int > (dataChar)) / 255.0); //Normalize 0 - 255 to 0.0 - 1.0
-  }
-  fileRecognizeStream.close();
+bool NN::propagateForward(){
   for (size_t i = 1; i < neuronLayers.size(); i++) //For all layers except input layer 0
   {
     for (size_t j = 0; j < neuronLayers[i].size(); j++) //For all neurons
@@ -190,6 +177,29 @@ bool NN::recognize(std::string fileNameRecognize) {
       neuronLayers[i][j] = sigmoid(biasLayers[i - 1][j] + activationSum);
     }
   }
+}
+
+bool NN::clearConsole() {
+  #ifdef _WIN32
+    system("cls"); // Windows
+  #else
+    system("clear"); // Linux/macOS
+  #endif
+}
+
+bool NN::recognize(std::string fileNameRecognize) {
+  std::ifstream fileRecognizeStream(fileNameRecognize);
+  if (!fileRecognizeStream) {
+    std::cerr <<fileNameRecognize<<" not found\n";
+    return 1;
+  } 
+  unsigned char dataChar;
+  neuronLayers[0].resize(0); //To use push_back
+  while (fileRecognizeStream.read(reinterpret_cast < char * > ( & dataChar), sizeof(dataChar))) {
+    neuronLayers[0].push_back((static_cast < unsigned int > (dataChar)) / 255.0); //Normalize 0 - 255 to 0.0 - 1.0
+  }
+  fileRecognizeStream.close();
+  propagateForward();
   double maxValue = neuronLayers[neuronLayers.size() - 1][0]; //State solution
   int maxIndex = 0;
   for (int i = 1; i < neuronLayers[neuronLayers.size() - 1].size(); ++i) {
@@ -198,24 +208,53 @@ bool NN::recognize(std::string fileNameRecognize) {
       maxIndex = i;
     }
   }
-  std::cout << "Digit recognized: " << maxIndex << ", confidence: " << maxValue * 100.0 << "%\n";
+  std::cout << "Recognized: " << maxIndex << ", confidence: " << maxValue * 100.0 << "%\n";
   return 0;
 }
 
-bool NN::train(std::string fileNameTrainImages, std::string fileNameTrainLabels) {
-  if(!checkFileExistence(fileNameTrainLabels))
-  {
-    std::cerr << "Digits labels should be written in a file named " 
-    << fileNameTrainLabels
-    <<" in the order of the photos, one byte is one digit, the said file was not discovered\n";
+bool NN::train(std::string fileNameTrainData, std::string fileNameTrainLabels) {
+  std::ifstream trainLabelsStream(fileNameTrainLabels);
+  if (!trainLabelsStream) {
+    std::cerr <<fileNameTrainLabels<<" not found\n";
     return 1;
   }
-  if (!checkFileExistence(fileNameTrainImages)) {
-    std::cerr << "The training images should be contained in a single file named "
-    << fileNameTrainImages
-    << ". Each image should be 784 pixels (784 bytes, with brightness levels from 0 to 255), written left to right, top to bottom. You can have as many 784-byte images in this file as the RAM can handle. This file was not found.\n";
+  std::ifstream trainDataStream(fileNameTrainData);
+  if (!trainDataStream) {
+    std::cerr <<fileNameTrainLabels<<" not found\n";
     return 1;
   }
+  trainLabelsStream.seekg(0,std::ios::end);
+  size_t trainSetSize = trainLabelsStream.tellg();//In elements
+  trainLabelsStream.seekg(0, std::ios::beg);
+  
+  for(size_t i = 0 ; i < trainSetSize;i++){//For all training elements
+    unsigned int label = static_cast<unsigned int>(static_cast<unsigned char>(trainLabelsStream.get()));//Read current label
+    for(size_t j = 0 ; j < neuronLayers[0].size();j++){//Read current data
+      neuronLayers[0][j] = (static_cast<unsigned int>(static_cast<unsigned char>(trainDataStream.get())))/255.0;
+    }
+    propagateForward();
+
+
+
+
+
+
+    if(i%(trainSetSize/1000)==0)//Progress info
+    {
+      clearConsole();
+      std::cout << std::fixed << std::setprecision(1)<<"Training progress: "<<((i*100.0)/trainSetSize)<<"%\n";
+    }
+  }
+
+
+
+  // unsigned char dataChar;
+  // neuronLayers[0].resize(0); //To use push_back
+  // while (fileRecognizeStream.read(reinterpret_cast < char * > ( & dataChar), sizeof(dataChar))) {
+  //   neuronLayers[0].push_back((static_cast < unsigned int > (dataChar)) / 255.0); //Normalize 0 - 255 to 0.0 - 1.0
+  // }
+  // fileRecognizeStream.close();
+  // //////////////////////////////////////////////
   // std::ifstream obiekt456g546g54634e5;
   // obiekt456g546g54634e5.open(TRAINING_LABELS, std::ios::binary);
   // obiekt456g546g54634e5.seekg(0, std::ios::end);
@@ -400,7 +439,11 @@ bool NN::train(std::string fileNameTrainImages, std::string fileNameTrainLabels)
   //     war3weight[ddd - 1230890] = war3weight[ddd - 1230890] - gradient[ddd];
   //   } //{1230890 - 1238729}
   // }
-  // sav3();
+  //////////////////////////////////////////////////////////////////////////////////
+  trainLabelsStream.close();
+  trainDataStream.close();
+  saveData();
+  clearConsole();
   std::cout << "Training completed\n";
   return 0;
 }
@@ -415,16 +458,16 @@ int main() {
         delete network_0;
         return 1;
     }
-    std::cout << "To recognize the digit enter 0, to train the network enter 1\n";
+    std::cout << "To recognize enter 0, to train the network enter 1\n";
     bool selection;
     std::cin >> selection;
     if (selection == 0) {
-        if (network_0->recognize(IMAGE_TO_RECOGNIZE_FILENAME)) {
+        if (network_0->recognize(DATA_TO_RECOGNIZE_FILENAME)) {
             delete network_0; 
             return 1;
         }
     } else {
-        if (network_0->train(TRAINING_IMAGES_FILENAME, TRAINING_LABELS_FILENAME)) {
+        if (network_0->train(TRAINING_DATA_FILENAME, TRAINING_LABELS_FILENAME)) {
             delete network_0; 
             return 1;
         }
