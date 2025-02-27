@@ -22,3 +22,7 @@ Usage:
 Note:
   - Ensure that the image file is formatted as a 784-byte file (28x28 pixels) in a left-to-right, top-to-bottom order.
   - Training files must be available for network training.
+
+## License:
+This project is licensed under the **MIT License**. See the `LICENSE` file for details.
+
