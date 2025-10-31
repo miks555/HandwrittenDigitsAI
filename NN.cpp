@@ -173,6 +173,7 @@ bool NN::propagateForward() {
       neuronLayersSums[i][j] = biasLayers[i - 1][j] + activationSum;
     }
   }
+  return 0;
 }
 
 bool NN::clearConsole() {
@@ -181,6 +182,7 @@ bool NN::clearConsole() {
   #else
   system("clear"); // Linux/macOS
   #endif
+  return 0;
 }
 
 bool NN::recognize(std::string fileNameRecognize, unsigned int& maxIndex, double& confidence) {
