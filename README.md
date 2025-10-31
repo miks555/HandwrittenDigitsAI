@@ -6,6 +6,8 @@ The program requires input files formatted exactly like the MNIST database, whic
 
 In the NN.hpp file, there is a #define directive that switches the program to debugging mode, where it displays information in the console.
 
+### Build / Compilation Example
+`g++ -std=c++17 main.cpp NN.cpp -o recognize -O2`
 ### Neural Network Layer Structure
 
 The network structure is represented by three main components: `neuronLayers`, `weightLayers`, and `biasLayers`. These vectors contain the information necessary for both forward propagation and backpropagation in the network.
